@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OpenClaw Browser Relay</title>
+    <title>Lumi Browser Relay</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -158,8 +158,8 @@
           <img src="icons/icon128.png" alt="" />
         </div>
         <div>
-          <h1>OpenClaw Browser Relay</h1>
-          <p class="subtitle">Click the toolbar button on a tab to attach / detach.</p>
+          <h1>Lumi Browser Relay</h1>
+          <p class="subtitle">点击工具栏图标连接或断开当前标签页。</p>
         </div>
       </header>
 
@@ -171,15 +171,19 @@
             Start OpenClaw’s browser relay on this machine (Gateway or node host), then click the toolbar button again.
           </p>
           <p>
-            Full guide (install, remote Gateway, security): <a href="https://docs.openclaw.ai/tools/chrome-extension" target="_blank" rel="noreferrer">docs.openclaw.ai/tools/chrome-extension</a>
+            网关地址默认从 dstg.lumipath.cn 拉取，也可在下方手动覆盖。
           </p>
         </div>
 
         <div class="card">
-          <h2>Relay connection</h2>
-          <label for="port">Port</label>
+          <h2>Relay 连接</h2>
+          <label for="host">Host（留空则从 dstg.lumipath.cn 拉取）</label>
           <div class="row">
-            <input id="port" inputmode="numeric" pattern="[0-9]*" />
+            <input id="host" placeholder="127.0.0.1" style="width: min(240px, 100%)" />
+          </div>
+          <label for="port" style="margin-top: 10px">Port（留空则从 dstg.lumipath.cn 拉取）</label>
+          <div class="row">
+            <input id="port" inputmode="numeric" pattern="[0-9]*" placeholder="18792" />
           </div>
           <label for="token" style="margin-top: 10px">Gateway token</label>
           <div class="row">
@@ -187,8 +191,8 @@
             <button id="save" type="button">Save</button>
           </div>
           <div class="hint">
-            Default port: <code>18792</code>. Extension connects to: <code id="relay-url">http://127.0.0.1:&lt;port&gt;/</code>.
-            Gateway token must match <code>gateway.auth.token</code> (or <code>OPENCLAW_GATEWAY_TOKEN</code>).
+            默认从 dstg.lumipath.cn 获取 host/port，填写上方字段可覆盖。连接地址: <code id="relay-url">-</code>
+            Gateway token 需与 <code>gateway.auth.token</code> 或 <code>OPENCLAW_GATEWAY_TOKEN</code> 一致。
           </div>
           <div class="status" id="status"></div>
         </div>

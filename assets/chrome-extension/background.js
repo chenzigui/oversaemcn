@@ -1,4 +1,9 @@
-import { buildRelayWsUrl, isRetryableReconnectError, reconnectDelayMs } from './background-utils.js'
+import {
+  buildRelayWsUrl,
+  fetchGatewayConfig,
+  isRetryableReconnectError,
+  reconnectDelayMs,
+} from './background-utils.js'
 
 const DEFAULT_PORT = 18792
 
@@ -49,12 +54,18 @@ function nowStack() {
   }
 }
 
-async function getRelayPort() {
-  const stored = await chrome.storage.local.get(['relayPort'])
-  const raw = stored.relayPort
-  const n = Number.parseInt(String(raw || ''), 10)
-  if (!Number.isFinite(n) || n <= 0 || n > 65535) return DEFAULT_PORT
-  return n
+async function getRelayHostPort() {
+  const stored = await chrome.storage.local.get(['relayPort', 'relayHost'])
+  const hostOverride = String(stored.relayHost || '').trim()
+  const portOverride = Number.parseInt(String(stored.relayPort || ''), 10)
+  const hasPortOverride = Number.isFinite(portOverride) && portOverride > 0 && portOverride <= 65535
+  if (hostOverride || hasPortOverride) {
+    return {
+      host: hostOverride || '127.0.0.1',
+      port: hasPortOverride ? portOverride : DEFAULT_PORT,
+    }
+  }
+  return fetchGatewayConfig()
 }
 
 async function getGatewayToken() {
@@ -132,10 +143,11 @@ async function ensureRelayConnection() {
   if (relayConnectPromise) return await relayConnectPromise
 
   relayConnectPromise = (async () => {
-    const port = await getRelayPort()
+    const { host, port } = await getRelayHostPort()
     const gatewayToken = await getGatewayToken()
-    const httpBase = `http://127.0.0.1:${port}`
-    const wsUrl = await buildRelayWsUrl(port, gatewayToken)
+    const scheme = host === '127.0.0.1' || host === 'localhost' ? 'http' : 'https'
+    const httpBase = `${scheme}://${host}:${port}`
+    const wsUrl = await buildRelayWsUrl(host, port, gatewayToken)
 
     // Fast preflight: is the relay server up?
     try {
@@ -209,7 +221,7 @@ function onRelayClosed(reason) {
       setBadge(tabId, 'connecting')
       void chrome.action.setTitle({
         tabId,
-        title: 'OpenClaw Browser Relay: relay reconnecting…',
+        title: 'Lumi Browser Relay: relay reconnecting…',
       })
     }
   }
@@ -271,7 +283,7 @@ async function reannounceAttachedTabs() {
       setBadge(tabId, 'off')
       void chrome.action.setTitle({
         tabId,
-        title: 'OpenClaw Browser Relay (click to attach/detach)',
+        title: 'Lumi Browser Relay (click to attach/detach)',
       })
       continue
     }
@@ -310,7 +322,7 @@ async function reannounceAttachedTabs() {
       setBadge(tabId, 'on')
       void chrome.action.setTitle({
         tabId,
-        title: 'OpenClaw Browser Relay: attached (click to detach)',
+        title: 'Lumi Browser Relay: attached (click to detach)',
       })
     } catch {
       // Relay send failed (e.g. WS closed in the gap between ensureRelayConnection
@@ -320,7 +332,7 @@ async function reannounceAttachedTabs() {
       setBadge(tabId, 'connecting')
       void chrome.action.setTitle({
         tabId,
-        title: 'OpenClaw Browser Relay: relay reconnecting…',
+        title: 'Lumi Browser Relay: relay reconnecting…',
       })
     }
   }
@@ -494,7 +506,7 @@ async function attachTab(tabId, opts = {}) {
   tabBySession.set(sessionId, tabId)
   void chrome.action.setTitle({
     tabId,
-    title: 'OpenClaw Browser Relay: attached (click to detach)',
+    title: 'Lumi Browser Relay: attached (click to detach)',
   })
 
   if (!opts.skipAttachedEvent) {
@@ -565,7 +577,7 @@ async function detachTab(tabId, reason) {
   setBadge(tabId, 'off')
   void chrome.action.setTitle({
     tabId,
-    title: 'OpenClaw Browser Relay (click to attach/detach)',
+    title: 'Lumi Browser Relay (click to attach/detach)',
   })
 
   await persistState()
@@ -586,7 +598,7 @@ async function connectOrToggleForActiveTab() {
       setBadge(tabId, 'off')
       void chrome.action.setTitle({
         tabId,
-        title: 'OpenClaw Browser Relay (click to attach/detach)',
+        title: 'Lumi Browser Relay (click to attach/detach)',
       })
       return
     }
@@ -604,7 +616,7 @@ async function connectOrToggleForActiveTab() {
     setBadge(tabId, 'connecting')
     void chrome.action.setTitle({
       tabId,
-      title: 'OpenClaw Browser Relay: connecting to local relay…',
+      title: 'Lumi Browser Relay: connecting to local relay…',
     })
 
     try {
@@ -615,7 +627,7 @@ async function connectOrToggleForActiveTab() {
       setBadge(tabId, 'error')
       void chrome.action.setTitle({
         tabId,
-        title: 'OpenClaw Browser Relay: relay not running (open options for setup)',
+        title: 'Lumi Browser Relay: relay not running (open options for setup)',
       })
       void maybeOpenHelpOnce()
       const message = err instanceof Error ? err.message : String(err)
@@ -786,7 +798,7 @@ async function onDebuggerDetach(source, reason) {
   setBadge(tabId, 'connecting')
   void chrome.action.setTitle({
     tabId,
-    title: 'OpenClaw Browser Relay: re-attaching after navigation…',
+    title: 'Lumi Browser Relay: re-attaching after navigation…',
   })
 
   // Extend re-attach window from 2.5 s to ~7.7 s (5 attempts).
@@ -819,7 +831,7 @@ async function onDebuggerDetach(source, reason) {
         setBadge(tabId, 'connecting')
         void chrome.action.setTitle({
           tabId,
-          title: 'OpenClaw Browser Relay: attached, waiting for relay reconnect…',
+          title: 'Lumi Browser Relay: attached, waiting for relay reconnect…',
         })
       }
       return
@@ -832,7 +844,7 @@ async function onDebuggerDetach(source, reason) {
   setBadge(tabId, 'off')
   void chrome.action.setTitle({
     tabId,
-    title: 'OpenClaw Browser Relay: re-attach failed (click to retry)',
+    title: 'Lumi Browser Relay: re-attach failed (click to retry)',
   })
 }
 

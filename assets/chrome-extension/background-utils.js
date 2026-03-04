@@ -28,7 +28,28 @@ export async function deriveRelayToken(gatewayToken, port) {
   return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function buildRelayWsUrl(port, gatewayToken) {
+const LUMIPATH_GATEWAY_API = "https://dstg.lumipath.cn/extension/relay";
+
+export async function fetchGatewayConfig() {
+  try {
+    const res = await fetch(LUMIPATH_GATEWAY_API, {
+      method: "GET",
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const host = String(data?.host || "127.0.0.1").trim();
+    const port = Number.parseInt(String(data?.port || "18792"), 10);
+    if (!Number.isFinite(port) || port <= 0 || port > 65535) {
+      throw new Error("Invalid port from API");
+    }
+    return { host, port };
+  } catch (err) {
+    return { host: "127.0.0.1", port: 18792 };
+  }
+}
+
+export async function buildRelayWsUrl(host, port, gatewayToken) {
   const token = String(gatewayToken || "").trim();
   if (!token) {
     throw new Error(
@@ -36,7 +57,8 @@ export async function buildRelayWsUrl(port, gatewayToken) {
     );
   }
   const relayToken = await deriveRelayToken(token, port);
-  return `ws://127.0.0.1:${port}/extension?token=${encodeURIComponent(relayToken)}`;
+  const scheme = host === "127.0.0.1" || host === "localhost" ? "ws" : "wss";
+  return `${scheme}://${host}:${port}/extension?token=${encodeURIComponent(relayToken)}`;
 }
 
 export function isRetryableReconnectError(err) {

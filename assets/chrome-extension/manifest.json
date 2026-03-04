@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "OpenClaw Browser Relay",
+  "name": "Lumi Browser Relay",
   "version": "0.1.0",
-  "description": "Attach OpenClaw to your existing Chrome tab via a local CDP relay server.",
+  "description": "Lumi 浏览器中继，通过本地 CDP relay 连接标签页。",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -10,10 +10,10 @@
     "128": "icons/icon128.png"
   },
   "permissions": ["debugger", "tabs", "activeTab", "storage", "alarms", "webNavigation"],
-  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*", "https://lumipath.cn/*"],
   "background": { "service_worker": "background.js", "type": "module" },
   "action": {
-    "default_title": "OpenClaw Browser Relay (click to attach/detach)",
+    "default_title": "Lumi Browser Relay (点击连接/断开)",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
