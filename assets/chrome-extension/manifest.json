@@ -5,20 +5,20 @@
   "description": "Lumi 浏览器中继，通过本地 CDP relay 连接标签页。",
   "icons": {
     "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
+    "32": "icons/lumipath_icon_32px.png",
     "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "128": "icons/lumipath_icon_128px.png"
   },
   "permissions": ["debugger", "tabs", "activeTab", "storage", "alarms", "webNavigation"],
-  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*", "https://lumipath.cn/*"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*", "https://lumipath.cn/*", "https://dstg.lumipath.cn/*"],
   "background": { "service_worker": "background.js", "type": "module" },
   "action": {
     "default_title": "Lumi Browser Relay (点击连接/断开)",
     "default_icon": {
       "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
+      "32": "icons/lumipath_icon_32px.png",
       "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+      "128": "icons/lumipath_icon_128px.png"
     }
   },
   "options_ui": { "page": "options.html", "open_in_tab": true }
